@@ -14,13 +14,19 @@ export class Recipe {
 
 
 export class MealItem {
-  recipe: Recipe;
+  recipe: Recipe | undefined;
   quantity: number;
 
-  constructor(recipe: Recipe, quantity: number) {
+  constructor(recipe: Recipe | undefined, quantity: number) {
     this.recipe = recipe;
     this.quantity = quantity;
   }
+}
+
+interface NutritionContent {
+  fat: number;
+  calories: number;
+  sodium: number;
 }
 
 
@@ -33,15 +39,18 @@ export class Meal {
     this.items = items;
   }
 
-  totalFatContent(): number {
-    if (!this.items) return 0;
+  getNutritionContent(): NutritionContent | null {
+    if (!this.items) return null;
 
-    let total = 0;
+    let fat = 0, calories = 0, sodium = 0;
     for (const item of this.items) {
-      total += item.recipe.fat * item.quantity;
+      if (!item.recipe) continue;
+      fat += item.recipe.fat * item.quantity;
+      calories += item.recipe.calories * item.quantity;
+      sodium += item.recipe.sodium * item.quantity;
     }
 
-    return total;
+    return {fat: fat, calories: calories, sodium: sodium};
   }
 }
 
@@ -51,22 +60,22 @@ type Meals = Map<number, Meal>;
 
 
 export class HospitalOrdering {
-  recipes: Recipes | null;
+  recipes: Recipes;
   meals: Meals | null | undefined;
 
   private latestMealId: number | null;
 
-  constructor(recipes: Recipes | null) {
+  constructor(recipes: Recipes) {
     this.recipes = recipes;
     this.meals = null;
     this.latestMealId = 0;
   }
 
   createRecipe(recipe: Recipe) {
-    // TODO: Create a recipe in the system
+    this.recipes?.set(recipe.name, recipe);
   }
 
-  getRecipes() {
+  getRecipes(): Recipes {
     // Return the latest recipes in the system (eg. so that diet office can pick recipes for patient meals)
     return this.recipes;
   }
@@ -82,7 +91,7 @@ export class HospitalOrdering {
     this.meals.set(mealId, meal);
   }
 
-  getMeal(id: number) {
-    // TODO: Return a meal with recipes and total nutrients by meal's id
+  getMeal(id: number): Meal | undefined {
+    return this.meals?.get(id);
   }
 }
